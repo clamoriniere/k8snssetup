@@ -4,7 +4,7 @@ Dummy tool to create a multi tenants Kubernetes cluster.
 
 ## Description
 
-This tool was build in order to prepare a Kubernetes cluster (GKE) for a Lab. It eases the creation of severals namespaces for a multi-tenants usage and also the creation of a dedicate ServiceAccount for each namespaces with proper isolation between each user/namespace with Role and Rolebindings. It also generate a kubeconfig dedicated for each user.
+This tool was built in order to prepare a Kubernetes cluster (GKE) for a Lab. It eases the creation of severals namespaces for a multi-tenants usage and also the creation of a dedicate ServiceAccount for each namespaces with proper isolation between each user/namespace with Role and Rolebindings. It also generates a kubeconfig dedicated for each user.
 
 ## Usage
 
@@ -45,8 +45,8 @@ kubectl  proxy --kubeconfig=$(pwd)/user1-user1.kubeconfig.yaml
 Starting to serve on 127.0.0.1:8001
 ```
 
-Thank to that you will be able to access the kubernetes dashboard with limited namespace access.
-If I still follow my example. I can access the resource from my dedicated `user1` namespace thanks to this link:
+Thank to that you will be able to access the kubernetes dashboard with a limitation to the namespace qssociated to the uer.
+You can access the resources inside `user1`'s dedicated namespace thanks to this link:
 `http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/overview?namespace=user1`
 
 ## How to setup a Kubernetes Cluster
@@ -67,7 +67,7 @@ kubeconfig entry generated for <clusterName>
 
 Then run at least one, a kubectl command in order to generate the access tocken (ex: ```kubectl get nodes```).
 
-You need to allow your user to create new Role and RoleBinding. To do so you need to add a cluster-admin Role to your user.
+You need to allow your user to create new Role and RoleBinding. To do so, add a cluster-admin Role to your user.
 
 ```console
 $ kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user <user>
