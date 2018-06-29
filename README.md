@@ -31,7 +31,7 @@ $ k8snssetup new-ns user1 --user user1 --kubeconfig=/tmp/admin.kubeconfi.yaml
 namespace "user1" created
 ```
 
-then you can use the generated `user1` `kubeconfig`
+then you can use the `kubeconfig` file generated for the `user1` in namespace `user1`.
 
 ```console
 kubectl get pods --kubeconfig=$(pwd)/user1-user1.kubeconfig.yaml
@@ -47,6 +47,7 @@ Starting to serve on 127.0.0.1:8001
 
 Thank to that you will be able to access the kubernetes dashboard with a limitation to the namespace qssociated to the uer.
 You can access the resources inside `user1`'s dedicated namespace thanks to this link:
+
 `http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/overview?namespace=user1`
 
 ## How to setup a Kubernetes Cluster
@@ -57,7 +58,7 @@ But It works also with a Kubernetes Cluster generate with `minikube`.
 
 ### GKE cluster (Google Cloud Plafrom)
 
-First you need to create GKE cluster (doc)[https://cloud.google.com/kubernetes-engine/docs/], then configure your kubectl command line (generate|update the kubeconfig file).
+First you need to create GKE cluster [doc](https://cloud.google.com/kubernetes-engine/docs/), then configure your kubectl command line (generate|update the kubeconfig file).
 
 ```console
 $ gcloud container clusters get-credentials <clusterName> --zone <zoneName> --project <projectName>
