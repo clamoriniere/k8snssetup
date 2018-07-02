@@ -3,6 +3,8 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/cedriclam/k8snssetup/cmd/k8snssetup/cmd/multi"
+	"github.com/cedriclam/k8snssetup/cmd/k8snssetup/cmd/new"
 	"github.com/cedriclam/k8snssetup/version"
 )
 
@@ -13,7 +15,8 @@ func NewRootCmd() *cobra.Command {
 		Version: version.Version,
 	}
 
-	cmd.AddCommand(NewNewCmd())
+	cmd.AddCommand(new.NewCmd())
+	cmd.AddCommand(multi.NewCmd())
 
 	return cmd
 }

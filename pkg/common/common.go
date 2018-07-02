@@ -1,65 +1,29 @@
-package cmd
+package common
 
 import (
 	"fmt"
 	"math/rand"
 	"time"
 
-	"github.com/spf13/cobra"
-
 	kcore_v1 "k8s.io/api/core/v1"
 	krbac_v1 "k8s.io/api/rbac/v1"
 
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	rest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	config_v1 "k8s.io/client-go/tools/clientcmd/api"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	cmdError "github.com/cedriclam/k8snssetup/cmd/k8snssetup/error"
 )
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-// NewNewCmd return new cobra Command for k8snssetup
-func NewNewCmd() *cobra.Command {
-	newCmd := &cobra.Command{
-		Use:   "new-ns <namespace-name> [required-flags]",
-		Short: "Creates a new namespace with new user",
-		Long:  ``,
-		Run:   newFunc,
-	}
-
-	newCmd.Flags().StringArrayVar(&users, "user", []string{}, "user name")
-	newCmd.Flags().StringVar(&kubeConfig, "kubeconfig", "", "kubeconfig file path")
-	newCmd.Flags().StringVar(&outputPath, "output", "", "kubeconfig file path")
-
-	return newCmd
-}
-
-var users []string
-var kubeConfig string
-var outputPath string
-var namespace string
-
-func newFunc(cmd *cobra.Command, args []string) {
-	if err := parseArgs(args); err != nil {
-		cmdError.ExitWithError(cmdError.ExitBadArgs, err)
-	}
-
-	if err := process(namespace); err != nil {
-		cmdError.ExitWithError(cmdError.ExitError, err)
-	}
-
-	fmt.Printf("Namespace '%s' created\n", namespace)
-}
-
-func process(namespace string) error {
-	kubeConfig, err := initKubeConfig(kubeConfig)
+// CreateNamespaceAndUsers used to create Namespace and User resources
+func CreateNamespaceAndUsers(kubeConfigfile string, namespace string, users []string) error {
+	kubeConfig, err := initKubeConfig(kubeConfigfile)
 	if err != nil {
 		return fmt.Errorf("unable to initialize kubeConfig: %v", err)
 	}
@@ -84,9 +48,13 @@ func process(namespace string) error {
 
 	for _, user := range users {
 		saName := fmt.Sprintf("%s", user)
-		sa, err := createServiceAccount(kubeClient, namespace, saName)
-		if err != nil {
-			return fmt.Errorf("unable create the service account %s: %v", saName, err)
+		var sa *kcore_v1.ServiceAccount
+		var err error
+		if err = retry(3, time.Second, func() error {
+			sa, err = createServiceAccount(kubeClient, namespace, saName)
+			return err
+		}); err != nil {
+			return err
 		}
 
 		var secretName string
@@ -265,16 +233,6 @@ func createRoleBinding(kubeClient clientset.Interface, ns, roleBindingName, role
 	if err != nil {
 		return fmt.Errorf("unable to create RoleBindings, err: %v", err)
 	}
-
-	return nil
-}
-
-func parseArgs(args []string) error {
-	if len(args) != 1 {
-		return fmt.Errorf("new-ns command needs 1 argument")
-	}
-
-	namespace = args[0]
 
 	return nil
 }

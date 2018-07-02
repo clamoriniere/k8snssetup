@@ -10,6 +10,8 @@ This tool was built in order to prepare a Kubernetes cluster (GKE) for a Lab. It
 
 First you need to have already a kubernetes cluster up and running. You can look a the session `How to setup a Kubernetes Cluster`.
 
+### Create one new namespace with its associated user(s)
+
 ```console
 $ k8snssetup new-ns --help
 Creates a new namespace with new user
@@ -27,28 +29,50 @@ Flags:
 example
 
 ```console
-$ k8snssetup new-ns user1 --user user1 --kubeconfig=/tmp/admin.kubeconfi.yaml
-namespace "user1" created
+$ k8snssetup new-ns project1 --user user1 --kubeconfig=/tmp/admin.kubeconfi.yaml
+namespace "project1" created
 ```
 
-then you can use the `kubeconfig` file generated for the `user1` in namespace `user1`.
+### Create several namespace and associated user in one command line
 
 ```console
-kubectl get pods --kubeconfig=$(pwd)/user1-user1.kubeconfig.yaml
+./k8snssetup multi --help
+Creates several namespaces and associated user
+
+Usage:
+  k8snssetup multi <number of namespace> [required-flags] [flags]
+
+Flags:
+  -h, --help                 help for multi
+      --kubeconfig string    kubeconfig file path
+      --ns-prefix string     namespace prefix (default "project")
+      --output string        kubeconfig file path
+      --user-prefix string   user prefix (default "user")
+
+```
+
+### How to use the command output files
+
+For each user/namespace a `kubeConfig` file have been generated.
+
+for example to use the generated `kube config` file generated for the `user1` in namespace `project1`.
+
+```console
+kubectl get pods --kubeconfig=$(pwd)/project1-user1.kubeconfig.yaml
 No resources found.
 ```
 
 and also proxy the kubernetes dashboard
 
 ```console
-kubectl  proxy --kubeconfig=$(pwd)/user1-user1.kubeconfig.yaml
+kubectl proxy --kubeconfig=$(pwd)/project1-user1.kubeconfig.yaml
 Starting to serve on 127.0.0.1:8001
 ```
 
 Thank to that you will be able to access the kubernetes dashboard with a limitation to the namespace qssociated to the uer.
 You can access the resources inside `user1`'s dedicated namespace thanks to this link:
 
-`http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/overview?namespace=user1`
+`http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/overview?namespace=project1`
 
 ## How to setup a Kubernetes Cluster
 
