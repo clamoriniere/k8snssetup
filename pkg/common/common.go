@@ -3,14 +3,20 @@ package common
 import (
 	"fmt"
 	"math/rand"
+	"os"
+	"path/filepath"
+	"runtime"
 	"time"
 
 	kcore_v1 "k8s.io/api/core/v1"
 	krbac_v1 "k8s.io/api/rbac/v1"
 
 	clientset "k8s.io/client-go/kubernetes"
+	// for supporting client auth plugins
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	rest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	config_v1 "k8s.io/client-go/tools/clientcmd/api"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -238,10 +244,64 @@ func createRoleBinding(kubeClient clientset.Interface, ns, roleBindingName, role
 }
 
 func initKubeConfig(cfgFile string) (*rest.Config, error) {
-	if len(cfgFile) > 0 {
-		return clientcmd.BuildConfigFromFlags("", cfgFile) // out of cluster config
+	kubeconfigFilePath := getKubeConfigDefaultPath(getHomePath(), cfgFile)
+	if len(kubeconfigFilePath) == 0 {
+		return nil, fmt.Errorf("error initializing config. The KUBECONFIG environment variable must be defined")
 	}
-	return rest.InClusterConfig()
+
+	config, err := configFromPath(kubeconfigFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("error obtaining kubectl config: %v", err)
+	}
+
+	return config.ClientConfig()
+}
+
+func configFromPath(path string) (clientcmd.ClientConfig, error) {
+	rules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: path}
+	credentials, err := rules.Load()
+	if err != nil {
+		return nil, fmt.Errorf("the provided credentials %q could not be loaded: %v", path, err)
+	}
+
+	overrides := &clientcmd.ConfigOverrides{
+		Context: clientcmdapi.Context{
+			Namespace: os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_NAMESPACE"),
+		},
+	}
+
+	context := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_CONTEXT")
+	if len(context) > 0 {
+		rules := clientcmd.NewDefaultClientConfigLoadingRules()
+		return clientcmd.NewNonInteractiveClientConfig(*credentials, context, overrides, rules), nil
+	}
+	return clientcmd.NewDefaultClientConfig(*credentials, overrides), nil
+}
+
+func getHomePath() string {
+	home := os.Getenv("HOME")
+	if runtime.GOOS == "windows" {
+		home = os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+	}
+
+	return home
+}
+
+func getKubeConfigDefaultPath(home string, kubeconfigPath string) string {
+	kubeconfig := filepath.Join(home, ".kube", "config")
+
+	kubeconfigEnv := os.Getenv("KUBECONFIG")
+	if len(kubeconfigEnv) > 0 {
+		kubeconfig = kubeconfigEnv
+	}
+
+	if len(kubeconfigPath) > 0 {
+		kubeconfig = kubeconfigPath
+	}
+	return kubeconfig
 }
 
 func retry(attempts int, sleep time.Duration, f func() error) error {

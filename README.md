@@ -90,8 +90,6 @@ Fetching cluster endpoint and auth data.
 kubeconfig entry generated for <clusterName>
 ```
 
-Then run at least one, a kubectl command in order to generate the access tocken (ex: ```kubectl get nodes```).
-
 You need to allow your user to create new Role and RoleBinding. To do so, add a cluster-admin Role to your user.
 
 ```console
@@ -99,20 +97,15 @@ $ kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-
 clusterrolebinding.rbac.authorization.k8s.io "cluster-admin-binding" created
 ```
 
-After that you can run the command:
-
-```console
-$ kubectl config view --flatten --minify > admin.kubeconfig.yaml
-.
-```
-
-You need to do a small change in the generated kubeconfig file. (I didn't have time to automate this part for now.):
-
-- Move ```users.user.auth-provider.config.access-token``` to ```users.user.token```
-- Remove the full section ```users.user.auth-provider```
-
-Now you are ready to use this ```kubeconfig``` with the `k8snssetup` tool.
-
 ### Minikube
 
-// TODO: document this session.
+You can run a Kubernetes cluster (of one node) thanks to [minikube](https://github.com/kubernetes/minikube). Install minikube by following the instruction on the github page.
+
+then run the following command:
+
+```console
+$ minikube start --extra-config=apiserver.Authorization-Mode=RBAC
+Starting local Kubernetes v1.9.0 cluster...
+Starting VM...
+...
+```
